@@ -32,20 +32,21 @@ if 'configs_frasco' not in st.session_state:
     }
 
 # --- FUNÇÃO PARA GERAR PDF ---
+
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(200, 10, "RELATÓRIO DE ENSAIO - FRASCO DE AREIA", ln=True, align='C')
+    pdf.cell(200, 10, "RELATORIO DE ENSAIO - FRASCO DE AREIA", ln=True, align='C')
     pdf.set_font("Arial", "I", 9)
     pdf.cell(200, 5, "Norma DNER-ME 092/94", ln=True, align='C')
     pdf.ln(5)
 
     sections = [
-        ("1. IDENTIFICAÇÃO", [f"OS: {dados['os']}", f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}", f"Local: {dados['endereco']}"]),
-        ("2. UMIDADE", [f"Solo Úmido+B: {dados['p_bu']:.1f}g", f"Solo Seco+B: {dados['p_bs']:.1f}g", f"Tara Bandeja: {dados['tara_u']:.1f}g", f"UMIDADE: {dados['umidade']:.2f} %"]),
+        ("1. IDENTIFICACAO", [f"OS: {dados['os']}", f"Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}", f"Local: {dados['endereco']}"]),
+        ("2. UMIDADE", [f"Solo Umido+B: {dados['p_bu']:.1f}g", f"Solo Seco+B: {dados['p_bs']:.1f}g", f"Tara Bandeja: {dados['tara_u']:.1f}g", f"UMIDADE: {dados['umidade']:.2f} %"]),
         ("3. PESOS E VOLUMES", [f"Inic. Frasco: {dados['p_ini']:.1f}g", f"Final Frasco: {dados['p_fin']:.1f}g", f"Areia Cava: {dados['p_areia_cava']:.1f}g", f"Volume Cava: {dados['vol']:.1f} cm3"]),
-        ("4. CONCLUSÃO", [f"Dens. Seca: {dados['dens_seca']:.3f} g/cm3", f"Proctor Lab: {dados['proctor']:.3f} g/cm3"])
+        ("4. CONCLUSAO", [f"Dens. Seca: {dados['dens_seca']:.3f} g/cm3", f"Proctor Lab: {dados['proctor']:.3f} g/cm3"])
     ]
 
     for title, lines in sections:
@@ -54,6 +55,7 @@ def gerar_pdf(dados):
         pdf.cell(190, 7, f" {title}", border=1, ln=True, fill=True)
         pdf.set_font("Arial", "", 10)
         for line in lines:
+            # Removendo acentos manuais para evitar erro de encoding no FPDF padrão
             pdf.cell(190, 8, f" {line}", border=1, ln=True)
         pdf.ln(2)
 
@@ -61,11 +63,16 @@ def gerar_pdf(dados):
     color = (0, 100, 0) if dados['gc'] >= dados['limite'] else (200, 0, 0)
     pdf.set_text_color(*color)
     pdf.set_font("Arial", "B", 14)
-    pdf.cell(190, 15, f" GRAU DE COMPACTAÇÃO: {dados['gc']:.1f} %", border=1, ln=True, align='C')
+    
+    # Removemos o emoji daqui para não dar erro
+    status_texto = "APROVADO" if dados['gc'] >= dados['limite'] else "RECOMPACTAR"
+    
+    pdf.cell(190, 15, f" GRAU DE COMPACTACAO: {dados['gc']:.1f} %", border=1, ln=True, align='C')
     pdf.set_font("Arial", "B", 12)
-    pdf.cell(190, 10, f"STATUS: {dados['status']}", border=0, ln=True, align='C')
-    return pdf.output(dest='S').encode('latin-1')
-
+    pdf.cell(190, 10, f"STATUS: {status_texto}", border=0, ln=True, align='C')
+    
+    # O segredo é usar o dest='S' puro ou tratar o encode com 'ignore'
+    return pdf.output(dest='S').encode('latin-1', 'ignore')
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("⚙️ Painel de Controle")
