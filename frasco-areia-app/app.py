@@ -109,8 +109,7 @@ with st.sidebar:
         st.success("Salvo!")
 
 # --- INTERFACE PRINCIPAL ---
-st.title("🧪 Frasco de Areia in Situ
-criado por Matheus")
+st.title("🧪 Frasco de Areia in Situ")
 
 st.header("1. Identificação")
 num_os = st.text_input("Número da OS")
