@@ -74,13 +74,12 @@ def gerar_pdf(dados, imagem_pil=None):
     pdf.cell(95, 8, " Densidade Seca de Campo:", border=1); pdf.cell(95, 8, f" {dados['dens_seca']:.3f} g/cm3", border=1, ln=True)
     pdf.cell(95, 8, f" Proctor Máximo (Lab):", border=1); pdf.cell(95, 8, f" {dados['proctor']:.3f} g/cm3", border=1, ln=True)
     
-    # Status com cor
     pdf.ln(5)
     if dados['gc'] >= dados['limite']:
-        pdf.set_text_color(0, 100, 0) # Verde escuro
+        pdf.set_text_color(0, 100, 0)
         txt_status = f"APROVADO (Min: {dados['limite']}%)"
     else:
-        pdf.set_text_color(200, 0, 0) # Vermelho
+        pdf.set_text_color(200, 0, 0)
         txt_status = f"RECOMPACTAR (Min: {dados['limite']}%)"
     
     pdf.set_font("Arial", "B", 14)
@@ -88,7 +87,7 @@ def gerar_pdf(dados, imagem_pil=None):
     pdf.cell(190, 10, txt_status, border=0, ln=True, align='C')
     pdf.set_text_color(0, 0, 0)
 
-    # Foto se existir
+    # --- O AJUSTE ESTÁ AQUI ABAIXO ---
     if imagem_pil:
         pdf.add_page()
         pdf.set_font("Arial", "B", 12)
@@ -96,9 +95,12 @@ def gerar_pdf(dados, imagem_pil=None):
         pdf.ln(5)
         img_buffer = io.BytesIO()
         imagem_pil.save(img_buffer, format='PNG')
-        pdf.image(img_buffer, x=15, y=30, w=180)
+        img_buffer.seek(0)
+        # Especificamos 'PNG' explicitamente para o FPDF não se perder
+        pdf.image(img_buffer, x=15, y=30, w=180, type='PNG')
 
     return pdf.output(dest='S').encode('latin-1')
+    
 # --- BARRA LATERAL ---
 with st.sidebar:
     st.header("⚙️ Configurações Fixas")
