@@ -1,33 +1,44 @@
-def calcular_hunt():
-    print("--- Calculadora de Lucro Tibia 2026 ---")
-    
-    # 1. Entrada de Dados da Hunt
-    tempo_minutos = float(input("Duração da hunt (em minutos): "))
-    loot_total = float(input("Loot total (em GPS): "))
-    
-    # 2. Custos de Imbuements (Ex: 3 slots Tier 3 custam aprox. 2kk por 20h)
-    # Vamos calcular o custo por minuto (2kk / 1200 minutos)
-    custo_imbuements_total = float(input("Custo total dos seus imbuements para 20h (em GPS): "))
-    custo_imbue_por_minuto = custo_imbuements_total / 1200
-    gasto_imbue_hunt = custo_imbue_por_minuto * tempo_minutos
+import streamlit as st
 
-    # 3. Gastos com Consumíveis (Potes, Runas, Food)
-    gastos_potes = float(input("Total gasto em potions/runas nesta hunt (em GPS): "))
+st.set_page_config(page_title="Tibia Hunt Analyzer 2026", page_icon="⚔️")
+
+st.title("⚔️ Calculadora de Hunt - Tibia")
+
+with st.sidebar:
+    st.header("Configurações de Custo")
+    # Preços médios dos itens de Imbuement (Market)
+    preco_token = st.number_input("Preço Gold Token", value=50000)
+    taxa_imbue = 250000 # Taxa fixa do Powerful
     
-    # 4. Cálculos Finais
-    custo_total = gastos_potes + gasto_imbue_hunt
-    lucro_real = loot_total - custo_total
-    lucro_por_hora = (lucro_real / tempo_minutos) * 60
+    st.info("Dica: 1h de hunt consome 1/20 do valor total do Imbuement.")
 
-    # Saída de Resultados
-    print("\n" + "="*30)
-    print(f"RESUMO DA HUNT")
-    print(f"Tempo: {tempo_minutos} min")
-    print(f"Gasto com Imbuements: {gasto_imbue_hunt:.2f} gps")
-    print(f"Gasto Total (Potes + Imbue): {custo_total:.2f} gps")
-    print(f"LUCRO REAL: {lucro_real:.2f} gps")
-    print(f"LUCRO POR HORA: {lucro_por_hora:.2f} gps")
-    print("="*30)
+col1, col2 = st.columns(2)
 
-if __name__ == "__main__":
-    calcular_hunt()
+with col1:
+    st.subheader("Dados da Hunt")
+    tempo = st.slider("Duração da Hunt (minutos)", 30, 180, 60)
+    loot = st.number_input("Loot Total (GPS)", min_value=0, step=1000)
+    supplies = st.number_input("Gastos com Potes/Runas (GPS)", min_value=0, step=1000)
+
+# Cálculo automático (Assumindo 3 slots de Imbuement Powerful)
+# Se cada slot custa ~2kk (itens + taxa), total 6kk por 20h
+custo_hora_imbue = (3 * (2000000)) / 20 
+custo_proporcional_imbue = (custo_hora_imbue / 60) * tempo
+
+total_gastos = supplies + custo_proporcional_imbue
+lucro_final = loot - total_gastos
+
+with col2:
+    st.subheader("Resultado Real")
+    st.metric("Lucro Final", f"{lucro_final:,.0f} gp".replace(",", "."), 
+              delta=f"{(lucro_final/tempo)*60:,.0f} gp/h".replace(",", "."))
+    
+    st.write(f"**Custo Invisível (Imbuements):** {custo_proporcional_imbue:,.0f} gp".replace(",", "."))
+
+if lucro_final > 0:
+    st.success("Hunt Lucrativa! 💰")
+elif lucro_final < 0:
+    st.error("Hunt no Prejuízo! 📉")
+
+st.divider()
+st.caption("Desenvolvido para organizar os gastos de EK e Monk em 2026.")
