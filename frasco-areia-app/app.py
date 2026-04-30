@@ -1,11 +1,12 @@
 import streamlit as st
 from datetime import datetime
 
-st.set_page_config(page_title="Tibia Daily Manager 2026", layout="wide")
+# Configuração da página
+st.set_page_config(page_title="Tibia Financeiro 2026", layout="wide")
 
-# --- INICIALIZAÇÃO DO ESTADO ---
+# --- INICIALIZAÇÃO DO ESTADO (Saldo começa zerado) ---
 if 'saldo' not in st.session_state:
-    st.session_state.saldo = 0.0
+    st.session_state.saldo = 0
 if 'historico' not in st.session_state:
     st.session_state.historico = []
 if 'log_diario' not in st.session_state:
@@ -13,70 +14,88 @@ if 'log_diario' not in st.session_state:
 if 'itens_personalizados' not in st.session_state:
     st.session_state.itens_personalizados = ["Potion", "Imbuement", "Bless", "Ring/Collar", "Premium", "Gold Token"]
 
-st.title("⚔️ Gestor Tibia: Fechamento Diário")
+st.title("⚔️ Gestor de GPS - Tibia")
 
-# --- SIDEBAR ---
+# --- SIDEBAR: CONFIGURAÇÕES E SALDO INICIAL ---
 with st.sidebar:
-    st.header("💰 Saldo Inicial")
-    saldo_manual = st.number_input("Quanto você tem agora? (GPS):", min_value=0.0, step=10000.0)
-    if st.button("Definir Saldo"):
-        st.session_state.saldo = saldo_manual
+    st.header("💰 Gestão de Saldo")
+    # Permite que você adicione o saldo que tem agora no jogo
+    saldo_inicial = st.number_input("Definir Saldo Atual (GPS):", min_value=0, step=10000)
+    if st.button("Atualizar Saldo Principal"):
+        st.session_state.saldo = saldo_inicial
+        st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🔵 Saldo definido para {saldo_inicial:,d}")
         st.rerun()
 
     st.divider()
-    st.header("⚙️ Configurações")
-    novo_item = st.text_input("Novo item de gasto:")
-    if st.button("Cadastrar Item"):
+    st.header("⚙️ Cadastro de Itens")
+    novo_item = st.text_input("Novo tipo de gasto:")
+    if st.button("Adicionar à Lista"):
         if novo_item and novo_item not in st.session_state.itens_personalizados:
             st.session_state.itens_personalizados.append(novo_item)
             st.rerun()
 
-# --- ÁREA DE LANÇAMENTO ---
+    if st.button("Resetar Tudo (Zerar)"):
+        st.session_state.saldo = 0
+        st.session_state.historico = []
+        st.session_state.log_diario = []
+        st.rerun()
+
+# --- ÁREA PRINCIPAL ---
 col1, col2 = st.columns([1, 1])
 
 with col1:
     st.subheader("Registrar Movimentação")
-    valor_mov = st.number_input("Valor (GPS):", min_value=0.0, step=1000.0, key="mov")
+    
+    valor_mov = st.number_input("Valor da Operação:", min_value=0, step=1000)
     tipo_item = st.selectbox("Categoria:", st.session_state.itens_personalizados + ["Loot (Soma)"])
     
     c1, c2 = st.columns(2)
     with c1:
-        if st.button("➖ Descontar", use_container_width=True):
+        if st.button("➖ Descontar Gasto", use_container_width=True):
             st.session_state.saldo -= valor_mov
-            st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🔴 -{valor_mov:,.0f} ({tipo_item})")
+            st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🔴 -{valor_mov:,d} ({tipo_item})")
             st.rerun()
+    
     with c2:
-        if st.button("➕ Somar", use_container_width=True):
+        if st.button("➕ Somar Loot", use_container_width=True):
             st.session_state.saldo += valor_mov
-            st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🟢 +{valor_mov:,.0f} (Loot)")
+            st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🟢 +{valor_mov:,d} (Loot)")
             st.rerun()
 
     st.divider()
-    # BOTÃO DE FECHAMENTO
     if st.button("📅 FINALIZAR DIA JOGADO", type="primary", use_container_width=True):
         data_hoje = datetime.now().strftime("%d/%m/%Y")
-        resumo = f"📅 {data_hoje} | Saldo Final: {st.session_state.saldo:,.0f} GP"
+        resumo = f"📅 {data_hoje} | Saldo Final: {st.session_state.saldo:,d} GP"
         st.session_state.log_diario.insert(0, resumo)
-        st.balloons() # Efeito visual de comemoração
-        st.success(f"Dia {data_hoje} finalizado com sucesso!")
+        st.balloons()
+        st.success(f"Resumo de {data_hoje} salvo!")
 
 with col2:
-    st.subheader("Saldo Atual")
-    cor_saldo = "green" if st.session_state.saldo >= 0 else "red"
-    st.markdown(f"<h1 style='text-align: center; color: {cor_saldo};'>{st.session_state.saldo:,.0f} GP</h1>".replace(",", "."), unsafe_allow_html=True)
+    st.subheader("Saldo no Jogo (Estilo Tibia)")
     
-    tab1, tab2 = st.tabs(["Histórico da Sessão", "Resumo por Dia"])
+    # Formatação igual à imagem enviada: Fundo escuro e vírgulas nos milhares
+    valor_formatado = f"{int(st.session_state.saldo):,d}"
+    st.markdown(f"""
+        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 10px; border: 2px solid #444; margin-bottom: 20px;">
+            <h1 style="text-align: center; color: #FFFFFF; font-family: 'Courier New', Courier, monospace; margin: 0;">
+                {valor_formatado} <span style="color: #FFD700;">●</span>
+            </h1>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    tab1, tab2 = st.tabs(["Histórico da Sessão", "Fechamentos Diários"])
     
     with tab1:
-        for registro in st.session_state.historico[:10]:
+        if not st.session_state.historico:
+            st.write("Nenhuma movimentação hoje.")
+        for registro in st.session_state.historico[:15]:
             st.write(registro)
             
     with tab2:
+        if not st.session_state.log_diario:
+            st.write("Nenhum dia finalizado ainda.")
         for dia in st.session_state.log_diario:
             st.info(dia)
 
-# Exportação (Geralmente útil para o seu estudo de Power BI depois)
-if st.session_state.log_diario:
-    st.download_button("Baixar Relatório de Dias", 
-                       data="\n".join(st.session_state.log_diario), 
-                       file_name="fechamento_tibia_2026.txt")
+st.divider()
+st.caption(f"Controle Financeiro Tibia 2026 | Usuário: Matheus | Local: Gravataí-RS")
