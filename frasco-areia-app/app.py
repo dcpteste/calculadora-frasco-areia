@@ -1,44 +1,62 @@
 import streamlit as st
 
-st.set_page_config(page_title="Tibia Hunt Analyzer 2026", page_icon="⚔️")
+st.set_page_config(page_title="Tibia Manager 2026", layout="wide")
 
-st.title("⚔️ Calculadora de Hunt - Tibia")
+# --- INICIALIZAÇÃO DO ESTADO (Para não perder os dados ao clicar) ---
+if 'saldo' not in st.session_state:
+    st.session_state.saldo = 0.0
+if 'historico' not in st.session_state:
+    st.session_state.historico = []
+if 'itens_personalizados' not in st.session_state:
+    st.session_state.itens_personalizados = ["Potion", "Imbuement", "Bless", "Ring/Collar", "Premium", "Gold Token"]
 
+st.title("⚖️ Gestor Financeiro Tibia")
+
+# --- SIDEBAR: GESTÃO DE ITENS ---
 with st.sidebar:
-    st.header("Configurações de Custo")
-    # Preços médios dos itens de Imbuement (Market)
-    preco_token = st.number_input("Preço Gold Token", value=50000)
-    taxa_imbue = 250000 # Taxa fixa do Powerful
-    
-    st.info("Dica: 1h de hunt consome 1/20 do valor total do Imbuement.")
+    st.header("⚙️ Configurações")
+    novo_item = st.text_input("Cadastrar novo tipo de item:")
+    if st.button("Adicionar Item à Lista"):
+        if novo_item and novo_item not in st.session_state.itens_personalizados:
+            st.session_state.itens_personalizados.append(novo_item)
+            st.success(f"{novo_item} adicionado!")
 
-col1, col2 = st.columns(2)
+    if st.button("Resetar Saldo"):
+        st.session_state.saldo = 0
+        st.session_state.historico = []
+        st.rerun()
+
+# --- ÁREA PRINCIPAL: ENTRADA E SAÍDA ---
+col1, col2 = st.columns([1, 1])
 
 with col1:
-    st.subheader("Dados da Hunt")
-    tempo = st.slider("Duração da Hunt (minutos)", 30, 180, 60)
-    loot = st.number_input("Loot Total (GPS)", min_value=0, step=1000)
-    supplies = st.number_input("Gastos com Potes/Runas (GPS)", min_value=0, step=1000)
-
-# Cálculo automático (Assumindo 3 slots de Imbuement Powerful)
-# Se cada slot custa ~2kk (itens + taxa), total 6kk por 20h
-custo_hora_imbue = (3 * (2000000)) / 20 
-custo_proporcional_imbue = (custo_hora_imbue / 60) * tempo
-
-total_gastos = supplies + custo_proporcional_imbue
-lucro_final = loot - total_gastos
+    st.subheader("Registrar Movimentação")
+    
+    valor = st.number_input("Valor (GPS):", min_value=0, step=1000)
+    tipo_item = st.selectbox("O que é isso?", st.session_state.itens_personalizados + ["Loot (Soma)"])
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("➖ Descontar", use_container_width=True):
+            st.session_state.saldo -= valor
+            st.session_state.historico.insert(0, f"🔴 Descontou {valor:,.0f} de {tipo_item}")
+            st.rerun()
+    
+    with c2:
+        if st.button("➕ Somar Loot", use_container_width=True):
+            st.session_state.saldo += valor
+            st.session_state.historico.insert(0, f"🟢 Somou {valor:,.0f} de Loot")
+            st.rerun()
 
 with col2:
-    st.subheader("Resultado Real")
-    st.metric("Lucro Final", f"{lucro_final:,.0f} gp".replace(",", "."), 
-              delta=f"{(lucro_final/tempo)*60:,.0f} gp/h".replace(",", "."))
+    st.subheader("Saldo Atual")
+    # Formatação visual do saldo
+    cor_saldo = "green" if st.session_state.saldo >= 0 else "red"
+    st.markdown(f"<h1 style='text-align: center; color: {cor_saldo};'>{st.session_state.saldo:,.0f} GP</h1>".replace(",", "."), unsafe_allow_html=True)
     
-    st.write(f"**Custo Invisível (Imbuements):** {custo_proporcional_imbue:,.0f} gp".replace(",", "."))
-
-if lucro_final > 0:
-    st.success("Hunt Lucrativa! 💰")
-elif lucro_final < 0:
-    st.error("Hunt no Prejuízo! 📉")
+    st.write("**Últimas Movimentações:**")
+    for registro in st.session_state.historico[:5]: # Mostra os últimos 5
+        st.write(registro)
 
 st.divider()
-st.caption("Desenvolvido para organizar os gastos de EK e Monk em 2026.")
+st.caption("Controle de gastos para EK / Monk - Tibia 2026")
