@@ -16,7 +16,7 @@ if 'itens_personalizados' not in st.session_state:
 
 st.title("⚔️ Gestor Financeiro Tibia")
 
-# --- SIDEBAR ---
+# --- SIDEBAR: CONFIGURAÇÕES E CADASTRO ---
 with st.sidebar:
     st.header("💰 Configurações")
     saldo_manual = st.number_input("Definir Saldo Atual (GPS):", min_value=0, step=10000)
@@ -25,6 +25,16 @@ with st.sidebar:
         st.session_state.historico.insert(0, f"{datetime.now().strftime('%H:%M')} | 🔵 Saldo ajustado para {saldo_manual:,d}")
         st.rerun()
     
+    st.divider()
+    st.header("✨ Cadastrar Novo Item")
+    # BOTÃO DE CADASTRO QUE FALTAVA
+    novo_item = st.text_input("Nome do novo item/gasto:")
+    if st.button("➕ Cadastrar Item"):
+        if novo_item and novo_item not in st.session_state.itens_personalizados:
+            st.session_state.itens_personalizados.append(novo_item)
+            st.success(f"'{novo_item}' adicionado à lista!")
+            st.rerun()
+
     st.divider()
     if st.button("Resetar Tudo"):
         st.session_state.saldo = 0
@@ -50,6 +60,7 @@ with col1:
     
     st.subheader("📝 Registrar no Saldo Real")
     valor_mov = st.number_input("Valor da Operação (GPS):", min_value=0, step=1000, key="op_valor")
+    # Aqui aparecem os itens que você cadastrou no botão da lateral
     tipo_item = st.selectbox("Categoria:", st.session_state.itens_personalizados)
     
     b1, b2 = st.columns(2)
@@ -65,7 +76,6 @@ with col1:
             st.rerun()
 
     st.write("---")
-    # BOTÃO DE FINALIZAR O DIA (VOLTOU!)
     if st.button("📅 FINALIZAR DIA JOGADO", type="primary", use_container_width=True):
         data_hoje = datetime.now().strftime("%d/%m/%Y")
         resumo = f"📅 {data_hoje} | Saldo Final: {int(st.session_state.saldo):,d} GP"
@@ -93,4 +103,4 @@ with col2:
             st.info(dia)
 
 st.divider()
-st.caption("Gestor Tibia 2026 | Matheus - RS")
+st.caption("Gestor Tibia 2026 | Matheus - Rio Grande do Sul")
